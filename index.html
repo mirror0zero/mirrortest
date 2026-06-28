@@ -1,0 +1,609 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mirror0 // vision and control</title>
+<style>
+    :root {
+        --bg-stark: #000000;
+        --border-thin: #ffffff;
+        --text-main: #ffffff;
+        --accent: #ffffff;
+    }
+
+    body {
+        background-color: var(--bg-stark);
+        color: var(--text-main);
+        font-family: "Helvetica Neue", Helvetica, sans-serif;
+        font-size: 15px;
+        letter-spacing: -0.02em;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        text-transform: lowercase;
+    }
+
+    h1 {
+        font-size: 25px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        color: #ffffff;
+        text-align: left;
+        margin: 0 0 5px 0;
+        padding: 0;
+    }
+
+    .container {
+        border: 1px;
+        padding: 10px;
+        max-width: 600px;
+        width: 100%;
+        background: hsl(0, 80%, 20%);
+    }
+
+.cam-select {
+    background: transparent;
+    color: var(--text-main);
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: inherit;
+    text-transform: lowercase;
+    cursor: crosshair;
+    outline: none;
+    margin-right: 5px;
+    margin-bottom: 5px;
+
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.cam-select:hover {
+    background: var(--accent);
+    color: #000;
+}
+
+.cam-select:focus {
+    border-color: #fff;
+}
+
+.cam-select option {
+    background: #000;
+    color: #fff;
+}
+
+.cam-select {
+    padding-right: 28px;
+    background-image:
+        linear-gradient(45deg, transparent 50%, white 50%),
+        linear-gradient(135deg, white 50%, transparent 50%);
+    background-position:
+        calc(100% - 14px) calc(50% - 2px),
+        calc(100% - 8px) calc(50% - 2px);
+    background-size: 6px 6px;
+    background-repeat: no-repeat;
+}
+
+    button {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--text-main);
+        padding: 4px 12px;
+        cursor: crosshair;
+        font-size: 12px;
+        transition: all 0.1s;
+        margin-right: 5px;
+    }
+
+    button:hover {
+        background: var(--accent);
+        color: #000;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    td {
+        padding: 8px 0;
+        border-bottom: 1px;
+    }
+
+    a {
+        color: var(--text-main);
+        text-decoration: none;
+    }
+
+    a:hover {
+        color: var(--accent);
+        background: #555;
+    }
+
+    .status-bar {
+        font-weight: bold;
+        color: var(--text-main);
+        margin-bottom: 20px;
+        border-left: 4px solid var(--accent);
+        padding-left: 10px;
+    }
+
+    .info-label {
+        color: var(--text-main);
+        font-size: 12px;
+        margin-top: 30px;
+    }
+
+    /* background layer */
+    #static-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.05;
+        pointer-events: none;
+    }
+
+.control-panel {
+    margin-top: 20px;
+    display: grid;
+    gap: 18px;
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+}
+
+.control-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-main);
+    margin-bottom: 10px;
+    border-left: 3px solid var(--accent);
+    padding-left: 6px;
+}
+
+/* remove default look */
+.cam-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2px;
+    background: #fff;
+    outline: none;
+    cursor: crosshair;
+}
+
+/* track */
+.cam-slider::-webkit-slider-runnable-track {
+    height: 2px;
+    background: #fff;
+}
+
+.cam-slider::-moz-range-track {
+    height: 2px;
+    background: #fff;
+}
+
+/* thumb */
+.cam-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border: 1px solid #fff;
+    margin-top: -6px;
+    transition: 0.1s;
+}
+
+.cam-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--accent);
+    border: 1px solid #fff;
+}
+
+/* hover effect */
+.cam-slider:hover::-webkit-slider-thumb {
+    background: #fff;
+    transform: scale(1.1);
+}
+</style>
+</head>
+
+<!-- script based on code from the JavaScript SunVox Player by Alexander Zolotov (NightRadio) https://warmplace.ru -->
+<script src="sunvox.js"></script>
+<script src="sunvox_lib_loader.js"></script>
+<script>
+// primary SunVox logic
+    var fileSize = 0;
+    var playStatus = 0;
+    function status( s ) { document.getElementById( "status" ).innerHTML = s; }
+
+    function loadFromArrayBuffer( buf ) {
+        if( buf ) {
+            var byteArray = new Uint8Array( buf );
+            if( sv_load_from_memory( 0, byteArray ) == 0 ) {
+                status( "load_complete // system_ready");
+                if( playStatus ) sv_play_from_beginning( 0 );
+            } else { status( "core_load_fail" ); }
+        }
+    }
+
+    function load( fname ) {
+        status( "loading..." + fname );
+        var req = new XMLHttpRequest();
+        req.open( "GET", fname, true );
+        req.responseType = "arraybuffer";
+        req.onload = function( e ) {
+            if( this.status != 200 ) { status( "file_not_found" ); return; }
+            loadFromArrayBuffer( this.response );
+        };
+        req.send( null );
+    }
+
+    function fileChanged( evt ) {
+        var file = evt.target.files[ 0 ];
+        var reader = new FileReader();
+        reader.onloadend = function() { status( "parsing..." ); loadFromArrayBuffer( reader.result ); }
+        if( file ) reader.readAsArrayBuffer( file );
+    }
+
+    svlib.then( function(Module) {
+        svlib = Module;
+        sv_init( 0, 44100, 2, 0 );
+        sv_open_slot( 0 );
+        load( "trackingtest.sunvox" );
+    } );
+</script>
+<!-- end script -->
+
+<script>
+// open camera (user-facing by default on mobile)
+async function populateCameraList() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameraSelect = document.getElementById("cameraSelect");
+
+    cameraSelect.innerHTML = "";
+
+    devices
+        .filter(device => device.kind === "videoinput")
+        .forEach((device, index) => {
+            const option = document.createElement("option");
+            option.value = device.deviceId;
+            option.text =
+                device.label || `Camera ${index + 1}`;
+            cameraSelect.appendChild(option);
+        });
+}
+
+let cameraStream = null;
+let motionRunning = false;
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function startCamera() {
+    if (cameraStream) return; // prevent reopening
+    
+    await sleep(2000); // wait two seconds before opening camera
+    const video = document.getElementById('video');
+    video.muted = true;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    try {
+        const selectedDevice =
+    document.getElementById("cameraSelect").value;
+
+cameraStream = await navigator.mediaDevices.getUserMedia({
+    video: {
+        deviceId: selectedDevice
+            ? { exact: selectedDevice }
+            : undefined
+    }
+});
+        video.srcObject = cameraStream;
+
+    video.onloadedmetadata = () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const overlay = document.getElementById('motion-overlay');
+    overlay.width = video.videoWidth;
+    overlay.height = video.videoHeight;
+
+    video.play();
+    motionRunning = true;
+    trackMotion(video, canvas, ctx);
+        };
+    } catch (err) {
+        status("camera_error: " + err.name);
+        console.error(err);
+    }
+   await populateCameraList(); 
+   document
+    .getElementById("cameraSelect")
+    .addEventListener("change", async () => {
+        stopCamera();
+        await startCamera();
+    });
+}
+
+// motion tracker mapped to SunVox controllers (pitch and velocity)
+let motionThreshold = 30;
+let motionSampleStep = 8;
+let motionMinPoints = 100;
+let hueCenter = 0;
+let hueRange = 30;
+let brightnessMin = 100;
+
+function rgbToHue(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    const d = max - min;
+
+    let h = 0;
+    if (d !== 0) {
+        if (max === r) h = ((g - b) / d) % 6;
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h *= 60;
+    }
+    return (h + 360) % 360;
+}
+
+function getBrightness(r, g, b) {
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+
+function hueDistance(h1, h2) {
+    let d = Math.abs(h1 - h2);
+    return Math.min(d, 360 - d);
+}
+
+function trackMotion(video, canvas, ctx) {
+    const overlay = document.getElementById('motion-overlay');
+    const overlayCtx = overlay.getContext('2d');
+    let prevFrame = null;
+    
+    function process() {
+        if (!motionRunning) return;
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (prevFrame) {
+           let totalX = 0, totalY = 0, motionPoints = 0;
+           const threshold = motionThreshold;
+           const sampleStep = motionSampleStep;
+
+           for (let y = 0; y < canvas.height; y += sampleStep) {
+           for (let x = 0; x < canvas.width; x += sampleStep) {
+           const i = (y * canvas.width + x) * 4;
+
+const r = currentFrame.data[i];
+const g = currentFrame.data[i + 1];
+const b = currentFrame.data[i + 2];
+
+const prevR = prevFrame.data[i];
+const diff = Math.abs(r - prevR);
+
+// color + tone analysis
+const hue = rgbToHue(r, g, b);
+const brightness = getBrightness(r, g, b);
+
+// filters
+const hueMatch = hueDistance(hue, hueCenter) < hueRange;
+const brightEnough = brightness > brightnessMin;
+
+if (diff > threshold && hueMatch && brightEnough) {
+    totalX += x;
+    totalY += y;
+    motionPoints++;
+        }
+    }
+} 
+
+if (motionPoints > motionMinPoints) {
+    const avgX = totalX / motionPoints;
+    const avgY = totalY / motionPoints;
+
+    var normX = 1 - avgX / canvas.width;
+    var normY = 1 - avgY / canvas.height;
+
+    updateSunVoxControllers(normX, normY);
+
+// motion tracker icon
+    overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+
+    overlayCtx.beginPath();
+    overlayCtx.arc((canvas.width-avgX), avgY, 16, 0, Math.PI * 2);
+    overlayCtx.strokeStyle = "red";
+    overlayCtx.lineWidth = 2;
+    overlayCtx.stroke();
+
+    overlayCtx.beginPath();
+    overlayCtx.arc((canvas.width-avgX), avgY, 4, 0, Math.PI * 2);
+    overlayCtx.fillStyle = "red";
+    overlayCtx.fill();
+}
+        }
+
+        prevFrame = currentFrame;
+        requestAnimationFrame(process);
+    }
+    process();
+}
+
+let smoothX = 0;
+let smoothY = 0;
+const smoothing = 0.2;
+
+// update SunVox controllers
+function updateSunVoxControllers(normX, normY) {
+    sv_set_event_t(0, 1, 0);
+    let mod = sv_find_module(0, "vctrl");
+    if (mod < 0) return;
+
+    smoothX += (normX - smoothX) * smoothing;
+    smoothY += (normY - smoothY) * smoothing;
+
+    const valX = Math.round(smoothX * 32768);
+    const valY = Math.round(smoothY * 32768);
+
+    sv_send_event(0, 0, 0, 0, mod + 1, 1 << 8, valX);
+    sv_send_event(0, 0, 0, 0, mod + 1, 6 << 8, valY);
+}
+
+function stopCamera() {
+    const video = document.getElementById('video');
+
+    motionRunning = false;
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+
+    video.srcObject = null;
+}
+
+function updateContainerColor() {
+    const container = document.querySelector('.container');
+    container.style.background =
+    `hsl(${hueCenter}, ${50 + hueRange / 2}%, ${10 + brightnessMin / 8}%)`;
+}
+</script>
+
+<body>
+<canvas id="static-overlay"></canvas>
+
+<div class="container">
+    <div class="info-label">vctrl_v2026.6</div>
+    <h1>m i r r o r 0</h1>
+    
+    <div style="margin-bottom: 10px;">
+        <span id="status" class="status-bar">awaiting_input...</span>
+    </div>
+    
+<div id="camera-container" style="position: relative; display: inline-block;">
+    <video id="video" autoplay playsinline
+        style="width: 100%; max-width: 400px; transform: scaleX(-1);">
+    </video>
+
+<canvas id="motion-overlay"
+    style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    ">
+</canvas>
+</div>
+
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <select id="cameraSelect" class="cam-select"></select>
+        <button type="button" onclick="startCamera(); sv_play_from_beginning(0); playStatus = 1;">execute</button>
+        <button type="button" onclick="stopCamera(); sv_stop(0); playStatus = 0;">abort</button>
+        <button type="button" onclick="document.getElementById('files').click();">local_file</button>
+        <input type="file" id="files" style="display:none;" onchange="fileChanged(event)"/>
+    </div>
+
+<div class="control-panel">
+
+    <div class="control">
+        <div class="control-header">
+            <span>threshold</span>
+            <span id="thVal">30</span>
+        </div>
+        <input class="cam-slider"
+            type="range" min="5" max="100" value="30"
+            oninput="motionThreshold = parseInt(this.value);
+                     document.getElementById('thVal').innerText=this.value;">
+    </div>
+
+    <div class="control">
+        <div class="control-header">
+            <span>step_size</span>
+            <span id="ssVal">6</span>
+        </div>
+        <input class="cam-slider"
+            type="range" min="2" max="10" value="6"
+            oninput="motionSampleStep = parseInt(this.value);
+                     document.getElementById('ssVal').innerText=this.value;">
+    </div>
+
+    <div class="control">
+        <div class="control-header">
+            <span>min_points</span>
+            <span id="mpVal">50</span>
+        </div>
+        <input class="cam-slider"
+            type="range" min="30" max="100" value="50"
+            oninput="motionMinPoints = parseInt(this.value);
+                     document.getElementById('mpVal').innerText=this.value;">
+    </div>
+
+    <div class="control">
+        <div class="control-header">
+            <span>hue_center</span>
+            <span id="hueVal">0</span>
+    </div>
+    <input class="cam-slider"
+        type="range" min="0" max="360" value="0"
+        oninput="hueCenter = parseInt(this.value);
+                 document.getElementById('hueVal').innerText = this.value; updateContainerColor();">
+    </div>
+
+    <div class="control">
+        <div class="control-header">
+            <span>hue_range</span>
+            <span id="hrVal">30</span>
+    </div>
+    <input class="cam-slider"
+        type="range" min="5" max="180" value="30"
+        oninput="hueRange = parseInt(this.value);
+                 document.getElementById('hrVal').innerText=this.value; updateContainerColor()">
+    </div>
+
+    <div class="control">
+        <div class="control-header">
+            <span>min_brightness</span>
+            <span id="brVal">100</span>
+    </div>
+    <input class="cam-slider"
+        type="range" min="0" max="255" value="100"
+        oninput="brightnessMin = parseInt(this.value);
+                 document.getElementById('brVal').innerText=this.value; updateContainerColor()">
+    </div>
+
+</div>
+
+    <div class="info-label">algorithms:</div>
+    <table>
+        <tr><td><a href="#" onclick="load('trackingtest.sunvox'); return false;">tracking_test // no_audio</a></td></tr>
+        <tr><td><a href="#" onclick="load('audiotest.sunvox'); return false;">audio_test</a></td></tr>
+    </table>
+
+    <footer style="margin-top: 30px; font-size: 10px; color: var(--text-main); border-top: 1px solid #fff; padding-top: 10px;">
+        [c] 2026 mirror0 // john_burtell<br> 
+        powered by SunVox [modular_synth // tracker]<br>
+        [c] 2008-2026 // alexander_zolotov // nightradio@gmail.com // <a href="https://warmplace.ru" style="text-decoration: underline;">warmplace.ru</a><br>
+        architecture // emscripten_wasm_x64<br>
+        <a href="https://github.com/mirror0zero/app/tree/main/info" style="text-decoration: underline;">info // resources</a>
+    </footer>
+</div>
+
+</body>
+</html>
