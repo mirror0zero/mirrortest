@@ -426,13 +426,13 @@ if (motionPoints > motionMinPoints) {
     overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
 
     overlayCtx.beginPath();
-    overlayCtx.arc((canvas.width-avgX), avgY, 16, 0, Math.PI * 2);
+    overlayCtx.arc((canvas.width-avgX), avgY, 8, 0, Math.PI * 2);
     overlayCtx.strokeStyle = "red";
     overlayCtx.lineWidth = 2;
     overlayCtx.stroke();
 
     overlayCtx.beginPath();
-    overlayCtx.arc((canvas.width-avgX), avgY, 4, 0, Math.PI * 2);
+    overlayCtx.arc((canvas.width-avgX), avgY, 2, 0, Math.PI * 2);
     overlayCtx.fillStyle = "red";
     overlayCtx.fill();
 }
