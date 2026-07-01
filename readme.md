@@ -31,7 +31,7 @@ There are two utility project files included on the main page:<br>
 <b>audio_test</b> - this file uses motion tracking to play a granular bell-like sound. It can be used to further adjust the motion tracking as well as the audio output of the system.
 
 <b>Performance and Offline Access</b><br>
-While the interface is designed to use minimal resources, performance will ultimately depend on internet connection speed and the complexity of the project. To help mitigate connection-related issues, <a href="https://mirror0zero.github.io/interface">mirror0</a> can be run offline by downloading the Release files to a local directory and running <b>index.html</b> via localhost. Note that all files must be in the same directory.<br>
+While the interface is designed to use minimal resources, performance will ultimately depend on internet connection speed and the complexity of the project. To help mitigate connection-related issues, <a href="https://mirror0zero.github.io/interface">mirror0</a> can be run offline by downloading the <a href="https://github.com/mirror0zero/interface/releases">Release</a> files to a local directory and running <b>index.html</b> via localhost. Note that all files must be in the same directory.<br>
 
 <b>Licensing</b><br>
 You are free to use, modify and/or distribute the code provided in index.html; however, if any SunVox resources are utilized you must adhere to the requirements found in the LICENSE.txt file distributed with this release.
