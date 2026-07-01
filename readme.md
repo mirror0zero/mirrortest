@@ -1,4 +1,4 @@
-<a href="https://github.com/mirror0zero.io/interface">mirror0</a> is a simple motion-tracking interface for use with the JavaScript SunVox engine.<br>
+<a href="https://mirror0zero.github.io/interface">mirror0</a> is a simple motion-tracking interface for use with the JavaScript SunVox engine.<br>
 
 To use the interface with projects created in SunVox, you will need to add a Ctl2Note module in the project and rename it "vctrl". Pitch and velocity values from that module can then be mapped to other module controls or be used trigger instruments or the MultiSynth module.<br>
 <b>Note:</b> Pitch values are determined by motion along the x-axis, and velocity values are determined by the tracker's position along the y-axis.<br>
@@ -31,7 +31,7 @@ There are two utility project files included on the main page:<br>
 <b>audio_test</b> - this file uses motion tracking to play a granular bell-like sound. It can be used to further adjust the motion tracking as well as the audio output of the system.
 
 <b>Performance and Offline Access</b><br>
-While the interface is designed to use minimal resources, performance will ultimately depend on internet connection speed and the complexity of the project. To help mitigate connection-related issues, <a href="https://github.com/mirror0zero.io/interface">mirror0</a> can be run offline by downloading the repository files to a local directory and running <b>index.html</b> via localhost. Note that all files must be in the same directory.<br>
+While the interface is designed to use minimal resources, performance will ultimately depend on internet connection speed and the complexity of the project. To help mitigate connection-related issues, <a href="https://mirror0zero.github.io/interface">mirror0</a> can be run offline by downloading the Release files to a local directory and running <b>index.html</b> via localhost. Note that all files must be in the same directory.<br>
 
 <b>Licensing</b><br>
 You are free to use, modify and/or distribute the code provided in index.html; however, if any SunVox resources are utilized you must adhere to the requirements found in the LICENSE.txt file distributed with this release.
