@@ -30,7 +30,7 @@ There are two utility project files included on the main page:
 
 <b>audio_test</b> - this file uses motion tracking to play a granular bell-like sound. It can be used to further adjust the motion tracking as well as the audio output of the system.
 
-<b>Performance and Offline Access</b>
+<b>Performance and Offline Access</b><br>
 While the interface is designed to use minimal resources, performance will ultimately depend on internet connection speed and the complexity of the project. To help mitigate connection-related issues, <b>mirror0</b> can be run offline by downloading the repository files to a local directory and running <b>index.html</b>via localhost. Note that all files must be in the same directory.<br>
 
 <b>Licensing</b><br>
