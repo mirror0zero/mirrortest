@@ -5,7 +5,7 @@ To use the interface with projects created in SunVox, you will need to add a Ctl
 
 <b>How To Use</b><br>
 
-There are three buttons which control the SunVox Javascript engine:<br>
+There are three buttons which control the JavaScript SunVox engine:<br>
 <b>execute</b> - starts the SunVox engine and initiates tracker playback from the beginning of the project. It is important to note that the camera opens approximately two seconds after the <execute> button is clicked.<br>
 
 <b>abort</b> - stops the project. You will need to click this button twice to completely stop the sound engine.<br>
